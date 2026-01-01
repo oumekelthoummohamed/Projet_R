@@ -1,0 +1,11 @@
+title: "Analyse des pharmacies en Tunisie"
+subtitle: "Cartographie et statistiques descriptives"
+---
+
+## Présentation
+
+Ce site rassemble le projet unique consacré à l'analyse des pharmacies en Tunisie (données par délégation et gouvernorat), avec préparation des données, statistiques descriptives, classements et comparaisons régionales.
+
+## Pages
+
+* [Analyse des pharmacies](qmd/pharmacies_analysis.qmd)

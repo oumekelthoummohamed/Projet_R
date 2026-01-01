@@ -1,0 +1,59 @@
+project:
+  type: website
+  output-dir: docs
+  render: 
+    - "qmd/pharmacies_analysis.qmd"
+    - "index.qmd"
+
+website:
+  title: "Elements of Data Analysis and Statistics - Lab Exercises"
+  site-url: "https://nevermind78.github.io/capstone_R/"
+  repo-url: "https://github.com/nevermind78/capstone_R"
+  
+  repo-actions: [edit, issue]
+  sidebar:
+    style: "docked"
+    search: true
+    contents:
+      - qmd/pharmacies_analysis.qmd
+
+format:
+  html:
+    theme: light
+    css: thpe.css
+    toc: true
+    number-sections: true
+    code-fold: true
+    code-summary: "Show code"
+    code-link: true
+    code-overflow: scroll
+  pdf:
+    toc: false
+    number-sections: true
+    colorlinks: true
+    papersize: a4
+    geometry:
+      - top=20mm
+      - left=25mm
+      - bottom=25mm
+
+# Configuration WebR (R seulement)
+webr:
+  packages: ["dplyr", "ggplot2", "readxl", "tidyr", "lubridate", "car", "lmtest"]
+
+execute:
+  freeze: true
+  cache: false
+  echo: false
+  warning: false
+  message: false
+  engine: r  # ← FORCER l'utilisation de R seulement
+
+# DÉSACTIVER Jupyter
+kernel:
+  jupyter: false
+
+bibliography: bib.bib
+csl: apa.csl
+
+latex-auto-install: true

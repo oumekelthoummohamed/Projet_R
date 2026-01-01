@@ -1,0 +1,150 @@
+title: "Cartographie et Analyse des Pharmacies en Tunisie"
+subtitle: "Analyse des pharmacies par Délégation et Gouvernorat"
+author: "oumekelthoum Mohamed"
+date: "`r Sys.Date()`"
+format: html
+execute:
+  echo: true
+---
+
+```{r setup, include=FALSE}
+# Chargement des packages
+if (!requireNamespace("tidyverse", quietly = TRUE)) install.packages("tidyverse")
+library(tidyverse)
+knitr::opts_chunk$set(echo = TRUE, fig.width = 8, fig.height = 5, warning = FALSE, message = FALSE)
+```
+
+## 1. Préparation et structuration des données 🔧
+
+Cette étape vérifie que les données sont prêtes : import du CSV, typage de la variable `Nombre de pharmacies`, traitement des valeurs manquantes (remplacées par 0), puis agrégation par Délégation et Gouvernorat.
+
+```{r load-data}
+# Importation
+data_path <- if (file.exists("data/pharmacies.csv")) {
+  file.path("data", "pharmacies.csv")
+} else {
+  file.path("qmd", "data", "pharmacies.csv")
+}
+df <- read_csv(data_path, show_col_types = FALSE)
+
+# Vérification des variables
+glimpse(df)
+
+# Renommage et typage
+df <- df %>% 
+  rename(nombre = `Nombre de pharmacies`) %>% 
+  mutate(nombre = as.numeric(nombre))
+
+# Gestion des valeurs manquantes
+na_count <- sum(is.na(df$nombre))
+if (na_count > 0) {
+  cat("Attention :", na_count, "valeurs manquantes détectées. Elles seront remplacées par 0.\n")
+  df <- df %>% mutate(nombre = replace_na(nombre, 0))
+}
+
+# Agrégation Initiale (Cruciale)
+# Calcul du total par Délégation et Gouvernorat
+agg_del <- df %>%
+  group_by(Gouvernorat, Délégation) %>%
+  summarise(total_pharmacies = sum(nombre, na.rm = TRUE), .groups = "drop")
+
+head(agg_del)
+```
+
+---
+
+## 2. Statistiques descriptives 📊
+
+Nous analysons la distribution globale du nombre de pharmacies par délégation (moyenne, médiane, dispersion, quartiles).
+
+```{r descriptives}
+# Calcul des mesures de tendance centrale, dispersion et position
+stats_global <- agg_del %>%
+  summarise(
+    Moyenne = mean(total_pharmacies),
+    Mediane = median(total_pharmacies),
+    Ecart_Type = sd(total_pharmacies),
+    Minimum = min(total_pharmacies),
+    Maximum = max(total_pharmacies),
+    Q1 = quantile(total_pharmacies, 0.25),
+    Q3 = quantile(total_pharmacies, 0.75),
+    Etendue = max(total_pharmacies) - min(total_pharmacies)
+  )
+
+knitr::kable(stats_global, caption = "Statistiques Descriptives Globales")
+```
+
+---
+
+## 3. Analyses géographiques et de classement 🌍
+
+### A. Diagramme en Barres par Délégation (Top 20)
+
+```{r bar-top20}
+top20 <- agg_del %>% arrange(desc(total_pharmacies)) %>% slice_head(n = 20)
+
+top20 %>%
+  mutate(Délégation = fct_reorder(Délégation, total_pharmacies)) %>%
+  ggplot(aes(x = Délégation, y = total_pharmacies)) +
+  geom_col(fill = "#f03b20") +
+  coord_flip() +
+  labs(title = "Top 20 des délégations (Nombre de pharmacies)",
+       x = "Délégation", y = "Total") +
+  theme_minimal()
+```
+
+### B. Classement (Top 10 et Flop 10)
+
+```{r rankings}
+top10 <- agg_del %>% arrange(desc(total_pharmacies)) %>% slice_head(n = 10)
+flop10 <- agg_del %>% arrange(total_pharmacies) %>% slice_head(n = 10)
+
+cat("--- TOP 10 Délégations ---\n")
+knitr::kable(top10, caption = "TOP 10 - Délégations les mieux dotées")
+
+cat("\n--- FLOP 10 Délégations ---\n")
+knitr::kable(flop10, caption = "FLOP 10 - Délégations les moins dotées")
+```
+
+### C. Comparaison par Gouvernorat
+
+Comparaison des délégations au sein de **Tunis**, **Sousse** et **Sfax**.
+
+```{r by-governorate}
+plot_gov <- function(data, gov_name, fill_color) {
+  data %>%
+    filter(Gouvernorat == gov_name) %>%
+    arrange(desc(total_pharmacies)) %>%
+    mutate(Délégation = fct_reorder(Délégation, total_pharmacies)) %>%
+    ggplot(aes(x = Délégation, y = total_pharmacies)) +
+    geom_col(fill = fill_color) +
+    coord_flip() +
+    labs(title = paste("Gouvernorat de", gov_name),
+         x = "Délégation", y = "Pharmacies") +
+    theme_minimal()
+}
+
+# Tunis
+plot_gov(agg_del, "TUNIS", "#2ca25f")
+
+# Sousse
+plot_gov(agg_del, "SOUSSE", "#3182bd")
+
+# Sfax
+plot_gov(agg_del, "SFAX", "#e6550d")
+```
+
+---
+
+## 4. Conclusion et interprétation 📝
+
+### Synthèse des Résultats
+- **Moyenne vs Médiane** : La moyenne (`r round(stats_global$Moyenne, 2)`) est nettement supérieure à la médiane (`r stats_global$Mediane`). Cela indique une distribution **asymétrique à droite** (positive skewness). La majorité des délégations ont un nombre modeste de pharmacies, tandis que quelques "hubs" tirent la moyenne vers le haut.
+- **Disparités** : L'écart-type (`r round(stats_global$Ecart_Type, 2)`) et l'étendue (`r stats_global$Etendue`) confirment de fortes disparités régionales.
+
+### Analyse de la Répartition
+La répartition n'est **pas homogène**. On observe une forte concentration dans les chefs-lieux de gouvernorats et les zones côtières ou très urbanisées (Tunis, Sfax, Sousse).
+
+### Identification des Extrêmes
+- **Les mieux pourvues** : Sans surprise, les délégations comme `COMMUNE TUNIS`, `COMMUNE SFAX`, et `COMMUNE SOUSSE` dominent le classement.
+- **Les moins pourvues** : De nombreuses délégations rurales (souvent dans l'intérieur ou le sud, hors chefs-lieux) disposent de très peu de pharmacies (1 ou 2), ce qui peut poser des questions d'accessibilité aux soins.
