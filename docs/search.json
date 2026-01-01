@@ -1,0 +1,73 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Elements of Data Analysis and Statistics - Lab Exercises",
+    "section": "",
+    "text": "title: “Analyse des pharmacies en Tunisie” subtitle: “Cartographie et statistiques descriptives” —"
+  },
+  {
+    "objectID": "index.html#présentation",
+    "href": "index.html#présentation",
+    "title": "Elements of Data Analysis and Statistics - Lab Exercises",
+    "section": "1 Présentation",
+    "text": "1 Présentation\nCe site rassemble le projet unique consacré à l’analyse des pharmacies en Tunisie (données par délégation et gouvernorat), avec préparation des données, statistiques descriptives, classements et comparaisons régionales."
+  },
+  {
+    "objectID": "index.html#pages",
+    "href": "index.html#pages",
+    "title": "Elements of Data Analysis and Statistics - Lab Exercises",
+    "section": "2 Pages",
+    "text": "2 Pages\n\nAnalyse des pharmacies"
+  },
+  {
+    "objectID": "qmd/pharmacies_analysis.html",
+    "href": "qmd/pharmacies_analysis.html",
+    "title": "Elements of Data Analysis and Statistics - Lab Exercises",
+    "section": "",
+    "text": "title: “Cartographie et Analyse des Pharmacies en Tunisie” subtitle: “Analyse des pharmacies par Délégation et Gouvernorat” author: “oumekelthoum Mohamed” date: “2026-01-01” format: html execute: echo: true —",
+    "crumbs": [
+      "echo: true"
+    ]
+  },
+  {
+    "objectID": "qmd/pharmacies_analysis.html#préparation-et-structuration-des-données",
+    "href": "qmd/pharmacies_analysis.html#préparation-et-structuration-des-données",
+    "title": "Elements of Data Analysis and Statistics - Lab Exercises",
+    "section": "\n1 1. Préparation et structuration des données 🔧",
+    "text": "1 1. Préparation et structuration des données 🔧\nCette étape vérifie que les données sont prêtes : import du CSV, typage de la variable Nombre de pharmacies, traitement des valeurs manquantes (remplacées par 0), puis agrégation par Délégation et Gouvernorat.\n\nShow code# Importation\ndata_path &lt;- if (file.exists(\"data/pharmacies.csv\")) {\n  file.path(\"data\", \"pharmacies.csv\")\n} else {\n  file.path(\"qmd\", \"data\", \"pharmacies.csv\")\n}\ndf &lt;- read_csv(data_path, show_col_types = FALSE)\n\n# Vérification des variables\nglimpse(df)\n\nRows: 263\nColumns: 4\n$ `_id`                  &lt;dbl&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, …\n$ Gouvernorat            &lt;chr&gt; \"ARIANA\", \"ARIANA\", \"ARIANA\", \"ARIANA\", \"ARIANA…\n$ Délégation             &lt;chr&gt; \"CITE ETTADHAMEN\", \"COMMUNE ARIANA\", \"EL MNIHLA…\n$ `Nombre de pharmacies` &lt;dbl&gt; 11, 37, 11, 4, 23, 4, 23, 1, 10, 6, 1, 6, 4, 2,…\n\nShow code# Renommage et typage\ndf &lt;- df %&gt;% \n  rename(nombre = `Nombre de pharmacies`) %&gt;% \n  mutate(nombre = as.numeric(nombre))\n\n# Gestion des valeurs manquantes\nna_count &lt;- sum(is.na(df$nombre))\nif (na_count &gt; 0) {\n  cat(\"Attention :\", na_count, \"valeurs manquantes détectées. Elles seront remplacées par 0.\\n\")\n  df &lt;- df %&gt;% mutate(nombre = replace_na(nombre, 0))\n}\n\n# Agrégation Initiale (Cruciale)\n# Calcul du total par Délégation et Gouvernorat\nagg_del &lt;- df %&gt;%\n  group_by(Gouvernorat, Délégation) %&gt;%\n  summarise(total_pharmacies = sum(nombre, na.rm = TRUE), .groups = \"drop\")\n\nhead(agg_del)\n\n# A tibble: 6 × 3\n  Gouvernorat Délégation      total_pharmacies\n  &lt;chr&gt;       &lt;chr&gt;                      &lt;dbl&gt;\n1 ARIANA      CITE ETTADHAMEN               11\n2 ARIANA      COMMUNE ARIANA                37\n3 ARIANA      EL MNIHLA                     11\n4 ARIANA      KALAAT ANDALOUS                4\n5 ARIANA      RAOUED                        23\n6 ARIANA      SIDI THABET                    4",
+    "crumbs": [
+      "echo: true"
+    ]
+  },
+  {
+    "objectID": "qmd/pharmacies_analysis.html#statistiques-descriptives",
+    "href": "qmd/pharmacies_analysis.html#statistiques-descriptives",
+    "title": "Elements of Data Analysis and Statistics - Lab Exercises",
+    "section": "\n2 2. Statistiques descriptives 📊",
+    "text": "2 2. Statistiques descriptives 📊\nNous analysons la distribution globale du nombre de pharmacies par délégation (moyenne, médiane, dispersion, quartiles).\n\nShow code# Calcul des mesures de tendance centrale, dispersion et position\nstats_global &lt;- agg_del %&gt;%\n  summarise(\n    Moyenne = mean(total_pharmacies),\n    Mediane = median(total_pharmacies),\n    Ecart_Type = sd(total_pharmacies),\n    Minimum = min(total_pharmacies),\n    Maximum = max(total_pharmacies),\n    Q1 = quantile(total_pharmacies, 0.25),\n    Q3 = quantile(total_pharmacies, 0.75),\n    Etendue = max(total_pharmacies) - min(total_pharmacies)\n  )\n\nknitr::kable(stats_global, caption = \"Statistiques Descriptives Globales\")\n\n\nStatistiques Descriptives Globales\n\nMoyenne\nMediane\nEcart_Type\nMinimum\nMaximum\nQ1\nQ3\nEtendue\n\n\n7.346008\n4\n13.84504\n1\n183\n2\n8\n182",
+    "crumbs": [
+      "echo: true"
+    ]
+  },
+  {
+    "objectID": "qmd/pharmacies_analysis.html#analyses-géographiques-et-de-classement",
+    "href": "qmd/pharmacies_analysis.html#analyses-géographiques-et-de-classement",
+    "title": "Elements of Data Analysis and Statistics - Lab Exercises",
+    "section": "\n3 3. Analyses géographiques et de classement 🌍",
+    "text": "3 3. Analyses géographiques et de classement 🌍\n\n3.1 A. Diagramme en Barres par Délégation (Top 20)\n\nShow codetop20 &lt;- agg_del %&gt;% arrange(desc(total_pharmacies)) %&gt;% slice_head(n = 20)\n\ntop20 %&gt;%\n  mutate(Délégation = fct_reorder(Délégation, total_pharmacies)) %&gt;%\n  ggplot(aes(x = Délégation, y = total_pharmacies)) +\n  geom_col(fill = \"#f03b20\") +\n  coord_flip() +\n  labs(title = \"Top 20 des délégations (Nombre de pharmacies)\",\n       x = \"Délégation\", y = \"Total\") +\n  theme_minimal()\n\n\n\n\n\n\n\n\n3.2 B. Classement (Top 10 et Flop 10)\n\nShow codetop10 &lt;- agg_del %&gt;% arrange(desc(total_pharmacies)) %&gt;% slice_head(n = 10)\nflop10 &lt;- agg_del %&gt;% arrange(total_pharmacies) %&gt;% slice_head(n = 10)\n\ncat(\"--- TOP 10 Délégations ---\\n\")\n\n--- TOP 10 Délégations ---\n\nShow codeknitr::kable(top10, caption = \"TOP 10 - Délégations les mieux dotées\")\n\n\nTOP 10 - Délégations les mieux dotées\n\nGouvernorat\nDélégation\ntotal_pharmacies\n\n\n\nTUNIS\nCOMMUNE TUNIS\n183\n\n\nSFAX\nCOMMUNE SFAX\n80\n\n\nSOUSSE\nCOMMUNE SOUSSE\n59\n\n\nARIANA\nCOMMUNE ARIANA\n37\n\n\nNABEUL\nHAMMAMET\n32\n\n\nSFAX\nSFAX SUD\n32\n\n\nMONASTIR\nMONASTIR\n30\n\n\nTUNIS\nLA MARSA\n27\n\n\nSFAX\nSAKIET EZZIT\n25\n\n\nBEN AROUS\nEL MOUROUJ\n24\n\n\n\n\nShow codecat(\"\\n--- FLOP 10 Délégations ---\\n\")\n\n\n--- FLOP 10 Délégations ---\n\nShow codeknitr::kable(flop10, caption = \"FLOP 10 - Délégations les moins dotées\")\n\n\nFLOP 10 - Délégations les moins dotées\n\nGouvernorat\nDélégation\ntotal_pharmacies\n\n\n\nBEJA\nAMDOUN\n1\n\n\nBEJA\nGOUBELLAT\n1\n\n\nBEJA\nTHIBAR\n1\n\n\nBIZERTE\nUTIQUE\n1\n\n\nGABES\nDKHILET TOUJANE\n1\n\n\nGABES\nMATMATA\n1\n\n\nGABES\nMATMATA JADIDA\n1\n\n\nGABES\nMENZEL HABIB\n1\n\n\nGAFSA\nBEL KHIR\n1\n\n\nGAFSA\nEL GUETAR\n1\n\n\n\n\n\n\n3.3 C. Comparaison par Gouvernorat\nComparaison des délégations au sein de Tunis, Sousse et Sfax.\n\nShow codeplot_gov &lt;- function(data, gov_name, fill_color) {\n  data %&gt;%\n    filter(Gouvernorat == gov_name) %&gt;%\n    arrange(desc(total_pharmacies)) %&gt;%\n    mutate(Délégation = fct_reorder(Délégation, total_pharmacies)) %&gt;%\n    ggplot(aes(x = Délégation, y = total_pharmacies)) +\n    geom_col(fill = fill_color) +\n    coord_flip() +\n    labs(title = paste(\"Gouvernorat de\", gov_name),\n         x = \"Délégation\", y = \"Pharmacies\") +\n    theme_minimal()\n}\n\n# Tunis\nplot_gov(agg_del, \"TUNIS\", \"#2ca25f\")\n\n\n\n\n\n\nShow code# Sousse\nplot_gov(agg_del, \"SOUSSE\", \"#3182bd\")\n\n\n\n\n\n\nShow code# Sfax\nplot_gov(agg_del, \"SFAX\", \"#e6550d\")",
+    "crumbs": [
+      "echo: true"
+    ]
+  },
+  {
+    "objectID": "qmd/pharmacies_analysis.html#conclusion-et-interprétation",
+    "href": "qmd/pharmacies_analysis.html#conclusion-et-interprétation",
+    "title": "Elements of Data Analysis and Statistics - Lab Exercises",
+    "section": "\n4 4. Conclusion et interprétation 📝",
+    "text": "4 4. Conclusion et interprétation 📝\n\n4.1 Synthèse des Résultats\n\n\nMoyenne vs Médiane : La moyenne (7.35) est nettement supérieure à la médiane (4). Cela indique une distribution asymétrique à droite (positive skewness). La majorité des délégations ont un nombre modeste de pharmacies, tandis que quelques “hubs” tirent la moyenne vers le haut.\n\nDisparités : L’écart-type (13.85) et l’étendue (182) confirment de fortes disparités régionales.\n\n4.2 Analyse de la Répartition\nLa répartition n’est pas homogène. On observe une forte concentration dans les chefs-lieux de gouvernorats et les zones côtières ou très urbanisées (Tunis, Sfax, Sousse).\n\n4.3 Identification des Extrêmes\n\n\nLes mieux pourvues : Sans surprise, les délégations comme COMMUNE TUNIS, COMMUNE SFAX, et COMMUNE SOUSSE dominent le classement.\n\nLes moins pourvues : De nombreuses délégations rurales (souvent dans l’intérieur ou le sud, hors chefs-lieux) disposent de très peu de pharmacies (1 ou 2), ce qui peut poser des questions d’accessibilité aux soins.",
+    "crumbs": [
+      "echo: true"
+    ]
+  }
+]
