@@ -1,0 +1,168 @@
+---
+title: "Cartographie et Analyse des Pharmacies en Tunisie"
+subtitle: "Presentation synthese"
+author: "oumekelthoum Mohamed"
+date: "`r Sys.Date()`"
+format:
+  revealjs:
+    theme: simple
+    transition: fade
+    slide-number: true
+    chalkboard: false
+    code-fold: true
+    code-summary: "Afficher le code"
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## Objectif
+
+- Presenter une vue d'ensemble de la repartition des pharmacies en Tunisie
+- Mettre en evidence les contrastes entre delegations et gouvernorats
+- Identifier les zones les mieux et les moins dotees
+
+## Donnees et preparation
+
+Sources:
+- Fichier `pharmacies.csv`
+- Variables: Gouvernorat, Delegation, Nombre de pharmacies
+
+```{r setup}
+if (!requireNamespace("tidyverse", quietly = TRUE)) install.packages("tidyverse")
+library(tidyverse)
+
+knitr::opts_chunk$set(fig.width = 9, fig.height = 5)
+
+# Importation
+file_candidates <- c(
+  "data/pharmacies.csv",
+  "qmd/data/pharmacies.csv",
+  "../data/pharmacies.csv",
+  "../qmd/data/pharmacies.csv"
+)
+file_found <- file_candidates[file.exists(file_candidates)][1]
+if (is.na(file_found)) {
+  stop("Fichier pharmacies.csv introuvable dans data/ ou qmd/data/")
+}
+
+raw_df <- read_csv(file_found, show_col_types = FALSE)
+
+# Nettoyage et preparation
+pharmacies <- raw_df %>%
+  rename(
+    nombre = `Nombre de pharmacies`,
+    Delegation = `Délégation`
+  ) %>%
+  mutate(nombre = as.numeric(nombre)) %>%
+  mutate(nombre = replace_na(nombre, 0))
+
+# Aggregation
+agg_del <- pharmacies %>%
+  group_by(Gouvernorat, Delegation) %>%
+  summarise(total_pharmacies = sum(nombre, na.rm = TRUE), .groups = "drop")
+```
+
+## Indicateurs globaux
+
+```{r stats}
+stats_global <- agg_del %>%
+  summarise(
+    Moyenne = mean(total_pharmacies),
+    Mediane = median(total_pharmacies),
+    Ecart_Type = sd(total_pharmacies),
+    Minimum = min(total_pharmacies),
+    Maximum = max(total_pharmacies),
+    Q1 = quantile(total_pharmacies, 0.25),
+    Q3 = quantile(total_pharmacies, 0.75)
+  )
+
+knitr::kable(stats_global, digits = 2, caption = "Statistiques descriptives globales")
+```
+
+## Top 20 delegations
+
+```{r top20}
+agg_del %>%
+  arrange(desc(total_pharmacies)) %>%
+  slice_head(n = 20) %>%
+  mutate(Delegation = fct_reorder(Delegation, total_pharmacies)) %>%
+  ggplot(aes(x = Delegation, y = total_pharmacies)) +
+  geom_col(fill = "#e34a33") +
+  coord_flip() +
+  labs(
+    title = "Top 20 des delegations",
+    x = "Delegation",
+    y = "Total"
+  ) +
+  theme_minimal()
+```
+
+## Top 10 vs Flop 10
+
+```{r topflop}
+top10 <- agg_del %>% arrange(desc(total_pharmacies)) %>% slice_head(n = 10)
+flop10 <- agg_del %>% arrange(total_pharmacies) %>% slice_head(n = 10)
+
+knitr::kable(top10, caption = "Top 10 delegations")
+knitr::kable(flop10, caption = "Flop 10 delegations")
+```
+
+## Focus Gouvernorat: Tunis
+
+```{r tunis}
+agg_del %>%
+  filter(Gouvernorat == "TUNIS") %>%
+  arrange(desc(total_pharmacies)) %>%
+  mutate(Delegation = fct_reorder(Delegation, total_pharmacies)) %>%
+  ggplot(aes(x = Delegation, y = total_pharmacies)) +
+  geom_col(fill = "#2ca25f") +
+  coord_flip() +
+  labs(title = "Gouvernorat de Tunis", x = "Delegation", y = "Pharmacies") +
+  theme_minimal()
+```
+
+## Focus Gouvernorat: Sousse
+
+```{r sousse}
+agg_del %>%
+  filter(Gouvernorat == "SOUSSE") %>%
+  arrange(desc(total_pharmacies)) %>%
+  mutate(Delegation = fct_reorder(Delegation, total_pharmacies)) %>%
+  ggplot(aes(x = Delegation, y = total_pharmacies)) +
+  geom_col(fill = "#3182bd") +
+  coord_flip() +
+  labs(title = "Gouvernorat de Sousse", x = "Delegation", y = "Pharmacies") +
+  theme_minimal()
+```
+
+## Focus Gouvernorat: Sfax
+
+```{r sfax}
+agg_del %>%
+  filter(Gouvernorat == "SFAX") %>%
+  arrange(desc(total_pharmacies)) %>%
+  mutate(Delegation = fct_reorder(Delegation, total_pharmacies)) %>%
+  ggplot(aes(x = Delegation, y = total_pharmacies)) +
+  geom_col(fill = "#e6550d") +
+  coord_flip() +
+  labs(title = "Gouvernorat de Sfax", x = "Delegation", y = "Pharmacies") +
+  theme_minimal()
+```
+
+## Lecture rapide
+
+- Distribution asymetrique: quelques delegations dominent
+- Concentration dans les chefs-lieux et zones coteires
+- Faible densite dans plusieurs delegations rurales
+
+## Conclusion
+
+- Le maillage est heterogene
+- Les zones urbaines concentrent l'offre
+- Resultats utiles pour la planification sanitaire
+
+## Merci
+
+Questions ?
